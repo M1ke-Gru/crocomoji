@@ -15,7 +15,7 @@ class Room:
         self.emojifier_queue: list[PlayerWithId] = []
 
     @property
-    def narrator_id(self) -> str:
+    def narrator_id(self) -> PlayerWithId:
         return self.emojifier_queue[self.emojifier_idx]
 
     @property
