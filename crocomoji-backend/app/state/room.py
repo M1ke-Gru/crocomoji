@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, shuffle
 from app.state.game import Game
 from app.schemas.player import PlayerCreate, PlayerIdentifier, PlayerPublic
 
@@ -21,9 +21,10 @@ class Room:
         self.players[player_id] = new_player
         return PlayerIdentifier(id=player_id, room_name=new_player.room_name)
 
-    def start_game(self, story_blocks: list[str]) -> None:
+    async def start_game(self, story_blocks: list[str]) -> None:
         if len(self.players) < 2:
             raise ValueError("At least 2 players are required to start.")
 
-        turn_order = list(self.players.keys())
-        self.game = Game(story_blocks=story_blocks, turn_order=turn_order)
+        turn_order = shuffle(list(self.players.keys()))
+        if turn_order:
+            self.game = Game(story_blocks=story_blocks, turn_order=turn_order)

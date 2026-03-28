@@ -14,7 +14,6 @@ class Game:
         self.story_blocks = story_blocks
         self.turn_order = turn_order
         self.current_round_idx = 0
-        self.phase = GamePhase.EMOJI_CLUE
 
         self.current_emojis: str = ""
         self.emoji_history: list[dict] = []
@@ -38,9 +37,6 @@ class Game:
     def submit_emoji(self, player_id: str, emojis: str) -> None:
         if player_id != self.narrator_id:
             raise ValueError("Only the narrator can submit emoji clues.")
-
-        if self.phase not in [GamePhase.EMOJI_CLUE, GamePhase.REFINEMENT]:
-            raise ValueError("Emoji clues cannot be submitted in this phase.")
 
         self.current_emojis = emojis
         self.emoji_history.append(
