@@ -1,29 +1,27 @@
-from .schemas import PlayerWithId, Sentence, Response
+from uuid import uuid4
+from .game import Game
+from .schemas import PlayerBase, PlayerWithId
 
 
 class Room:
     def __init__(self, room_id: str, host_id: str):
         self.room_id = room_id
+        self.host_id = host_id
         self.players: dict[str, PlayerWithId] = {}
-        self.sentences: list[Sentence] = []
-        self.current_sentence_idx: int = 0
-        self.hits_remaining: int = 3
-        self.responses: list[Response] = []
-        self.selected_responses: list[Response] = []
-        self.current_emojis: str = ""
-        self.emojifier_idx: int = 0
-        self.emojifier_queue: list[PlayerWithId] = []
+        self.game: Game | None = None
 
-    @property
-    def narrator_id(self) -> PlayerWithId:
-        return self.emojifier_queue[self.emojifier_idx]
+    def add_player(self, player: PlayerBase) -> PlayerWithId:
+        new_player = PlayerWithId(
+            id=str(uuid4()),
+            name=player.name,
+        )
 
-    @property
-    def current_sentence(self) -> Sentence:
-        return self.sentences[self.current_sentence_idx]
+        self.players[new_player.id] = new_player
+        return new_player
 
-    def add_player(self, player: PlayerWithId) -> None: ...
-    def submit_emoji(self, player_id: str, emojis: str) -> None: ...
-    def submit_guess(self, player_id: str, text: str) -> None: ...
-    def select_response(self, player_id: str, response_id: str) -> None: ...
-    def advance_round(self) -> None: ...
+    def start_game(self, story_blocks: list[str]) -> None:
+        if len(self.players) < 2:
+            raise ValueError("At least 2 players are required to start.")
+
+        turn_order = list(self.players.keys())
+        self.game = Game(story_blocks=story_blocks, turn_order=turn_order)
