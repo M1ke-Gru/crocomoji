@@ -1,5 +1,5 @@
 from datetime import datetime
-from .phases import GamePhase
+from ..phases import GamePhase
 from .response import Response
 
 
@@ -67,7 +67,9 @@ class Game:
             raise ValueError("Only the narrator can select a response.")
 
         if self.phase != GamePhase.NARRATOR_SELECTING:
-            raise ValueError("Responses can only be selected in narrator selecting phase.")
+            raise ValueError(
+                "Responses can only be selected in narrator selecting phase."
+            )
 
         found = False
         for response in self.responses:
@@ -86,7 +88,9 @@ class Game:
             raise ValueError("Only the narrator can choose the final response.")
 
         if self.phase != GamePhase.FINAL_SUBMISSION:
-            raise ValueError("Final response can only be chosen in final submission phase.")
+            raise ValueError(
+                "Final response can only be chosen in final submission phase."
+            )
 
         for response in self.responses:
             if response.id == response_id:

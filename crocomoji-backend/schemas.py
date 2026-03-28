@@ -17,10 +17,6 @@ class PlayerWithId(PlayerPublic):
     id: int
 
 
-class Room(BaseModel):
-    id: int
-
-
 class Game(BaseModel):
     id: int
     text: str
