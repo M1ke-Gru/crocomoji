@@ -6,10 +6,10 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL=/jokestar/api
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN npm run build -- --base=/jokestar/
+RUN npm run build
 
 # Tiny init image — copies built files to a mounted volume on startup
 FROM alpine:3

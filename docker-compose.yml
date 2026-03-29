@@ -1,13 +1,36 @@
 services:
-  backend:
-    build: ./crocomoji-backend
-    restart: unless-stopped
-
   frontend:
     build: ./crocomoji-frontend
     volumes:
       - frontend_dist:/dist
     restart: "no"
 
+  web:
+    image: nginx:alpine
+    container_name: jokestar-web
+    volumes:
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - default
+      - caddy
+
+  backend:
+    build: ./crocomoji-backend
+    container_name: jokestar-backend
+    restart: unless-stopped
+    networks:
+      - default
+      - caddy
+
 volumes:
   frontend_dist:
+
+networks:
+  caddy:
+    external: true
+    name: caddy_default
