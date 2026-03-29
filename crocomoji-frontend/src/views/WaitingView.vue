@@ -25,13 +25,14 @@ onMounted(async () => {
     router.replace('/')
     return
   }
+  connect(roomName, playerStore.playerId)
   try {
     const room = await api.getRoom(roomName)
     gameStore.setPlayersFromRoom(room.players)
+    gameStore.setStatus(room.status as 'waiting' | 'playing' | 'finished')
   } finally {
     loading.value = false
   }
-  connect(roomName, playerStore.playerId)
 })
 
 watch(

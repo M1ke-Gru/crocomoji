@@ -16,12 +16,15 @@ export interface RoundResult {
 }
 
 export const useRoundStore = defineStore('round', () => {
+  const DRAFT_KEY = 'round_draft_ending'
   const index = ref(0)
   const totalRounds = ref(0)
   const phase = ref<'submitting' | 'voting' | 'reveal'>('submitting')
   const setup = ref('')
+  const actualPunchline = ref('')
   const submittedCount = ref(0)
   const totalPlayers = ref(0)
+  const draftEnding = ref(sessionStorage.getItem(DRAFT_KEY) ?? '')
   const mySubmission = ref('')
   const submissions = ref<Record<string, Submission>>({})
   const myVote = ref('')
@@ -39,7 +42,10 @@ export const useRoundStore = defineStore('round', () => {
     totalRounds.value = data.total_rounds
     phase.value = 'submitting'
     setup.value = data.setup
+    actualPunchline.value = ''
     submittedCount.value = 0
+    draftEnding.value = ''
+    sessionStorage.removeItem(DRAFT_KEY)
     mySubmission.value = ''
     submissions.value = {}
     myVote.value = ''
@@ -63,9 +69,20 @@ export const useRoundStore = defineStore('round', () => {
     votedCount.value = data.voted_count
   }
 
-  function onRoundOver(data: { results: RoundResult[]; scores: Record<string, number> }) {
+  function onRoundOver(data: { results: RoundResult[]; scores: Record<string, number>; actual_punchline?: string }) {
     phase.value = 'reveal'
     results.value = data.results
+    actualPunchline.value = data.actual_punchline ?? ''
+  }
+
+  function setDraftEnding(text: string) {
+    draftEnding.value = text
+    sessionStorage.setItem(DRAFT_KEY, text)
+  }
+
+  function clearDraftEnding() {
+    draftEnding.value = ''
+    sessionStorage.removeItem(DRAFT_KEY)
   }
 
   return {
@@ -73,8 +90,10 @@ export const useRoundStore = defineStore('round', () => {
     totalRounds,
     phase,
     setup,
+    actualPunchline,
     submittedCount,
     totalPlayers,
+    draftEnding,
     mySubmission,
     submissions,
     myVote,
@@ -85,5 +104,7 @@ export const useRoundStore = defineStore('round', () => {
     onVotingStarted,
     onVoteReceived,
     onRoundOver,
+    setDraftEnding,
+    clearDraftEnding,
   }
 })

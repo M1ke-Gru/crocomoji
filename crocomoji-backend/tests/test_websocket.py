@@ -134,7 +134,9 @@ class TestWSActions:
 
     @patch("handlers.actions.fetch_jokes", new_callable=AsyncMock)
     def test_start_game_broadcasts_game_started(self, mock_fetch):
-        mock_fetch.return_value = ["Why did the chicken cross the road?"] * 2
+        mock_fetch.return_value = [
+            {"setup": "Why did the chicken cross the road?", "delivery": "To get to the other side."}
+        ] * 2
 
         received_p1: list[dict] = []
         received_p2: list[dict] = []
@@ -180,7 +182,9 @@ class TestWSFullRound:
 
     @patch("handlers.actions.fetch_jokes", new_callable=AsyncMock)
     def test_full_round(self, mock_fetch):
-        mock_fetch.return_value = ["Why did the chicken cross the road?"]
+        mock_fetch.return_value = [
+            {"setup": "Why did the chicken cross the road?", "delivery": "To get to the other side."}
+        ]
 
         p1_msgs: list[dict] = []
         p2_msgs: list[dict] = []
@@ -250,3 +254,4 @@ class TestWSFullRound:
         round_over = next(m for m in all_msgs if m["action"] == "round_over")
         assert "results" in round_over["data"]
         assert "scores" in round_over["data"]
+        assert "actual_punchline" in round_over["data"]

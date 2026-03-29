@@ -101,7 +101,15 @@ async def _end_round(room) -> None:
     results = sc.award_round(round_)
     scores = {pid: p.stars for pid, p in room.game.players.items()}
 
-    await broadcast(room, "round_over", {"results": results, "scores": scores})
+    await broadcast(
+        room,
+        "round_over",
+        {
+            "results": results,
+            "scores": scores,
+            "actual_punchline": round_.delivery,
+        },
+    )
 
     # Brief pause then advance to next round
     _schedule(room.name, _advance_after_reveal(room))
@@ -131,8 +139,11 @@ async def handle_start_game(room, player, data: StartGame):
     room.game.voting_time_seconds = data.voting_time_seconds
     room.game.status = "playing"
 
-    setups = await fetch_jokes(data.num_rounds)
-    room.game.rounds = [Round(index=i, setup=s) for i, s in enumerate(setups)]
+    jokes = await fetch_jokes(data.num_rounds)
+    room.game.rounds = [
+        Round(index=i, setup=j["setup"], delivery=j["delivery"])
+        for i, j in enumerate(jokes)
+    ]
     room.game.current_round_index = 0
 
     await broadcast(room, "game_started", {

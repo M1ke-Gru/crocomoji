@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import { useGameStore } from '@/stores/game'
 import { useRoundStore } from '@/stores/round'
 import { storeToRefs } from 'pinia'
 import { connect, send, connected } from '@/services/socket'
+import { api } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,15 +14,18 @@ const playerStore = usePlayerStore()
 const game = useGameStore()
 const round = useRoundStore()
 
-const { phase, setup, submittedCount, totalPlayers, submissions, myVote, votedCount, results, index, totalRounds } =
+const { phase, setup, actualPunchline, submittedCount, totalPlayers, submissions, myVote, votedCount, results, index, totalRounds } =
   storeToRefs(round)
 const { playerList, status } = storeToRefs(game)
 
 const roomName = route.params.name as string
-const endingText = ref('')
+const endingText = computed({
+  get: () => round.draftEnding,
+  set: (value: string) => round.setDraftEnding(value),
+})
 const hasSubmitted = computed(() => round.mySubmission !== '')
 
-onMounted(() => {
+onMounted(async () => {
   if (!playerStore.isLoaded || playerStore.roomName !== roomName) {
     router.replace('/')
     return
@@ -29,12 +33,22 @@ onMounted(() => {
   if (!connected.value) {
     connect(roomName, playerStore.playerId)
   }
+  try {
+    const room = await api.getRoom(roomName)
+    game.setPlayersFromRoom(room.players)
+    game.setStatus(room.status as 'waiting' | 'playing' | 'finished')
+  } catch {
+    // ignore snapshot errors, ws events continue to drive state
+  }
 })
 
 function submitEnding() {
-  if (!endingText.value.trim() || hasSubmitted.value) return
-  round.mySubmission = endingText.value.trim()
-  send('submit_ending', { text: endingText.value.trim() })
+  const text = endingText.value.trim()
+  if (!text || hasSubmitted.value) return
+  const sent = send('submit_ending', { text })
+  if (!sent) return
+  round.mySubmission = text
+  round.clearDraftEnding()
 }
 
 function castVote(playerId: string) {
@@ -181,6 +195,9 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
           <div class="text-center mb-6">
             <div class="text-4xl mb-2">🎤</div>
             <p class="font-display text-xl text-tooth">"{{ setup }}"</p>
+            <p v-if="actualPunchline" class="text-tooth-dim font-mono text-sm mt-2">
+              API punchline: "{{ actualPunchline }}"
+            </p>
           </div>
 
           <div class="flex flex-col gap-3">

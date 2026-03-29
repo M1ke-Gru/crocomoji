@@ -109,7 +109,11 @@ function dispatch(action: string, data: Record<string, unknown>) {
       round.onVoteReceived(data as { voter_id: string; voter_name: string; voted_count: number })
       break
     case 'round_over':
-      round.onRoundOver(data as { results: import('@/stores/round').RoundResult[]; scores: Record<string, number> })
+      round.onRoundOver(data as {
+        results: import('@/stores/round').RoundResult[]
+        scores: Record<string, number>
+        actual_punchline?: string
+      })
       game.onStarsUpdated((data as { scores: Record<string, number> }).scores)
       break
     case 'game_over':

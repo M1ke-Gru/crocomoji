@@ -27,8 +27,10 @@ class TestFetchJokes:
             result = await fetch_jokes(3)
 
         assert len(result) == 3
+        assert "setup" in result[0]
+        assert "delivery" in result[0]
 
-    async def test_extracts_setup_only(self):
+    async def test_extracts_setup_and_delivery(self):
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
@@ -46,8 +48,8 @@ class TestFetchJokes:
 
             result = await fetch_jokes(1)
 
-        assert result[0] == "Why so serious?"
-        assert "Because Joker" not in result[0]
+        assert result[0]["setup"] == "Why so serious?"
+        assert result[0]["delivery"] == "Because Joker"
 
     async def test_falls_back_on_network_error(self):
         with patch("httpx.AsyncClient") as mock_client_cls:
@@ -60,9 +62,11 @@ class TestFetchJokes:
             result = await fetch_jokes(3)
 
         assert len(result) == 3
-        for setup in result:
-            assert isinstance(setup, str)
-            assert len(setup) > 0
+        for joke in result:
+            assert isinstance(joke["setup"], str)
+            assert len(joke["setup"]) > 0
+            assert isinstance(joke["delivery"], str)
+            assert len(joke["delivery"]) > 0
 
     async def test_fills_gaps_when_api_returns_fewer(self):
         """If the API returns fewer jokes than requested, fallbacks fill the rest."""
@@ -107,4 +111,4 @@ class TestFetchJokes:
             jokes_module._fallback_index = 0
             result = await fetch_jokes(1)
 
-        assert result[0] == "Valid setup"
+        assert result[0]["setup"] == "Valid setup"

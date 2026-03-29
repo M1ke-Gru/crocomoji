@@ -40,6 +40,10 @@ export const useGameStore = defineStore('game', () => {
     onStarsUpdated(scores)
   }
 
+  function setStatus(nextStatus: 'waiting' | 'playing' | 'finished') {
+    status.value = nextStatus
+  }
+
   function setPlayersFromRoom(roomPlayers: { id: string; display_name: string; stars?: number }[]) {
     players.value = Object.fromEntries(
       roomPlayers.map((p) => [p.id, { id: p.id, display_name: p.display_name, stars: p.stars ?? 0 }]),
@@ -56,6 +60,7 @@ export const useGameStore = defineStore('game', () => {
     onGameStarted,
     onStarsUpdated,
     onGameOver,
+    setStatus,
     setPlayersFromRoom,
   }
 })
