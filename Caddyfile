@@ -1,4 +1,12 @@
-mgrushko.dev {
+# Jokestar routes — paste these blocks inside the existing mgrushko.dev { } site block.
+#
+# The frontend_dist volume must be mounted into the Caddy container, e.g.:
+#   volumes:
+#     - crocomoji_frontend_dist:/srv/jokestar:ro
+#
+# The backend container must be reachable as "backend" from Caddy's network, e.g.:
+#   networks: [caddy_default, crocomoji_default]  (or however your setup bridges them)
+
     # Backend API — strip /jokestar/api prefix before proxying.
     # flush_interval -1 is required for SSE (disables response buffering).
     handle_path /jokestar/api/* {
@@ -17,4 +25,3 @@ mgrushko.dev {
 
     # Redirect bare /jokestar to /jokestar/
     redir /jokestar /jokestar/ 301
-}
