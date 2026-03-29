@@ -21,6 +21,22 @@
   --font-mono: 'DM Mono', 'Courier New', monospace;
 }
 
+/* emoji-picker-element theme */
+emoji-picker {
+  --background: #0f2417;
+  --border-color: #1a3a24;
+  --indicator-color: #d4a04a;
+  --input-border-color: #1a3a24;
+  --input-font-color: #f0ead6;
+  --input-placeholder-color: #c8c2ae;
+  --button-hover-background: #1a3a24;
+  --emoji-padding: 0.3rem;
+  --category-emoji-padding: 0.3rem;
+  --num-columns: 8;
+  width: 100%;
+  border-radius: 0.75rem;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-swamp); }

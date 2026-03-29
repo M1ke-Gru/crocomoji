@@ -14,7 +14,7 @@ const playerStore = usePlayerStore()
 const game = useGameStore()
 const round = useRoundStore()
 
-const { phase, setup, actualPunchline, submittedCount, totalPlayers, submissions, myVote, votedCount, results, index, totalRounds } =
+const { phase, setup, actualPunchline, submittedCount, totalPlayers, submissions, myVote, votedCount, results, index, totalRounds, timeRemaining, timerFraction } =
   storeToRefs(round)
 const { playerList, status } = storeToRefs(game)
 
@@ -45,10 +45,9 @@ onMounted(async () => {
 function submitEnding() {
   const text = endingText.value.trim()
   if (!text || hasSubmitted.value) return
-  const sent = send('submit_ending', { text })
-  if (!sent) return
   round.mySubmission = text
   round.clearDraftEnding()
+  send('submit_ending', { text })
 }
 
 function castVote(playerId: string) {
@@ -96,6 +95,25 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
         </div>
       </div>
     </header>
+
+    <!-- Timer bar -->
+    <div v-if="phase !== 'reveal'" class="relative h-1.5 w-full bg-moss/30">
+      <div
+        class="absolute left-0 top-0 h-full transition-all duration-1000 ease-linear"
+        :class="timerFraction > 0.4 ? 'bg-bright' : timerFraction > 0.2 ? 'bg-amber' : 'bg-red-400'"
+        :style="{ width: `${timerFraction * 100}%` }"
+      />
+    </div>
+
+    <!-- Timer countdown -->
+    <div v-if="phase !== 'reveal' && timeRemaining > 0" class="flex justify-center pt-4 pb-1">
+      <div
+        class="font-mono text-5xl font-bold tabular-nums leading-none"
+        :class="timeRemaining > 10 ? 'text-tooth' : timeRemaining > 5 ? 'text-amber' : 'text-red-400'"
+      >
+        {{ timeRemaining }}
+      </div>
+    </div>
 
     <!-- Main content -->
     <main class="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-2xl mx-auto w-full">
@@ -266,9 +284,9 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
       </div>
       <button
         class="px-8 py-3 bg-amber text-swamp font-mono text-sm font-medium rounded-xl hover:bg-amber-glow transition-colors cursor-pointer"
-        @click="$router.push('/')"
+        @click="$router.push(`/room/${roomName}`)"
       >
-        Back to lobby
+        Play again
       </button>
     </div>
   </div>

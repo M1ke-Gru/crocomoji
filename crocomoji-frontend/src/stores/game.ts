@@ -27,6 +27,7 @@ export const useGameStore = defineStore('game', () => {
   function onGameStarted(data: { num_rounds: number; joke_time_seconds: number; voting_time_seconds: number }) {
     status.value = 'playing'
     numRounds.value = data.num_rounds
+    for (const p of Object.values(players.value)) p.stars = 0
   }
 
   function onStarsUpdated(scores: Record<string, number>) {

@@ -2,46 +2,81 @@ import { ref } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { useGameStore } from '@/stores/game'
 import { useRoundStore } from '@/stores/round'
+import router from '@/router'
 
-const WS_BASE = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
-let ws: WebSocket | null = null
+let abortController: AbortController | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
 export const connected = ref(false)
 
 export function connect(roomName: string, playerId: string) {
-  if (ws) {
-    ws.onclose = null
-    ws.close()
+  connected.value = false
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
   }
-  ws = new WebSocket(`${WS_BASE}/ws/${roomName}/${playerId}`)
+  if (abortController) {
+    abortController.abort()
+    abortController = null
+  }
+  openStream(roomName, playerId)
+}
 
-  ws.onopen = () => {
+async function openStream(roomName: string, playerId: string) {
+  abortController = new AbortController()
+  try {
+    const response = await fetch(
+      `${BASE_URL}/rooms/${roomName}/events/${playerId}`,
+      { signal: abortController.signal },
+    )
+
+    if (response.status === 404) {
+      usePlayerStore().clear()
+      router.replace('/')
+      return
+    }
+
+    if (!response.ok || !response.body) {
+      scheduleReconnect()
+      return
+    }
+
     connected.value = true
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
-    }
-  }
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
 
-  ws.onmessage = (event) => {
     try {
-      const { action, data } = JSON.parse(event.data)
-      dispatch(action, data)
-    } catch {
-      // ignore malformed messages
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() ?? ''
+        for (const part of parts) {
+          for (const line of part.split('\n')) {
+            if (line.startsWith('data: ')) {
+              try {
+                const { action, data } = JSON.parse(line.slice(6))
+                dispatch(action, data)
+              } catch {
+                // ignore malformed messages
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
     }
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') return
   }
 
-  ws.onclose = () => {
-    connected.value = false
-    scheduleReconnect()
-  }
-
-  ws.onerror = () => {
-    connected.value = false
-  }
+  connected.value = false
+  scheduleReconnect()
 }
 
 function scheduleReconnect() {
@@ -55,12 +90,19 @@ function scheduleReconnect() {
   }, 2000)
 }
 
-export function send(action: string, data: Record<string, unknown> = {}): boolean {
-  if (ws?.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ action, data }))
-    return true
+export async function send(action: string, data: Record<string, unknown> = {}): Promise<boolean> {
+  const player = usePlayerStore()
+  if (!player.playerId || !player.roomName) return false
+  try {
+    const res = await fetch(`${BASE_URL}/rooms/${player.roomName}/actions/${player.playerId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, data }),
+    })
+    return res.ok
+  } catch {
+    return false
   }
-  return false
 }
 
 export function disconnect() {
@@ -68,10 +110,9 @@ export function disconnect() {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
   }
-  if (ws) {
-    ws.onclose = null
-    ws.close()
-    ws = null
+  if (abortController) {
+    abortController.abort()
+    abortController = null
   }
   connected.value = false
 }
@@ -81,6 +122,12 @@ function dispatch(action: string, data: Record<string, unknown>) {
   const round = useRoundStore()
 
   switch (action) {
+    case 'room_sync': {
+      const sync = data as { players: { id: string; display_name: string; stars: number }[]; status: string }
+      game.setPlayersFromRoom(sync.players)
+      game.setStatus(sync.status as 'waiting' | 'playing' | 'finished')
+      break
+    }
     case 'player_connected':
       game.onPlayerConnected(data as { player_id: string; display_name: string })
       break
@@ -118,6 +165,9 @@ function dispatch(action: string, data: Record<string, unknown>) {
       break
     case 'game_over':
       game.onGameOver((data as { scores: Record<string, number> }).scores)
+      break
+    case 'error':
+      console.warn('Server error:', (data as { message: string }).message)
       break
     default:
       break

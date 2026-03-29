@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 export interface Submission {
   player_id: string
@@ -30,6 +30,33 @@ export const useRoundStore = defineStore('round', () => {
   const myVote = ref('')
   const votedCount = ref(0)
   const results = ref<RoundResult[]>([])
+  const timeRemaining = ref(0)
+  const timeDuration = ref(0)
+  let _timerInterval: ReturnType<typeof setInterval> | null = null
+
+  const timerFraction = computed(() => timeDuration.value > 0 ? timeRemaining.value / timeDuration.value : 0)
+
+  function startTimer(seconds: number) {
+    if (_timerInterval) clearInterval(_timerInterval)
+    timeRemaining.value = seconds
+    timeDuration.value = seconds
+    _timerInterval = setInterval(() => {
+      if (timeRemaining.value > 0) {
+        timeRemaining.value--
+      } else {
+        clearInterval(_timerInterval!)
+        _timerInterval = null
+      }
+    }, 1000)
+  }
+
+  function stopTimer() {
+    if (_timerInterval) {
+      clearInterval(_timerInterval)
+      _timerInterval = null
+    }
+    timeRemaining.value = 0
+  }
 
   function onRoundStarted(data: {
     round_index: number
@@ -51,6 +78,7 @@ export const useRoundStore = defineStore('round', () => {
     myVote.value = ''
     votedCount.value = 0
     results.value = []
+    startTimer(data.joke_time_seconds)
   }
 
   function onPlayerSubmitted(data: { player_id: string; display_name: string; submitted_count: number; total_players: number }) {
@@ -63,6 +91,7 @@ export const useRoundStore = defineStore('round', () => {
     submissions.value = Object.fromEntries(
       Object.entries(data.submissions).map(([id, s]) => [id, { player_id: id, ...s }]),
     )
+    startTimer(data.voting_time_seconds)
   }
 
   function onVoteReceived(data: { voter_id: string; voter_name: string; voted_count: number }) {
@@ -73,6 +102,7 @@ export const useRoundStore = defineStore('round', () => {
     phase.value = 'reveal'
     results.value = data.results
     actualPunchline.value = data.actual_punchline ?? ''
+    stopTimer()
   }
 
   function setDraftEnding(text: string) {
@@ -99,6 +129,9 @@ export const useRoundStore = defineStore('round', () => {
     myVote,
     votedCount,
     results,
+    timeRemaining,
+    timeDuration,
+    timerFraction,
     onRoundStarted,
     onPlayerSubmitted,
     onVotingStarted,
