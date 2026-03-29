@@ -10,8 +10,7 @@ class JoinRequest(BaseModel):
     display_name: str
 
 
-# WebSocket schemas
-class WSMessage(BaseModel):
+class ActionMessage(BaseModel):
     action: str
     data: dict = {}
 

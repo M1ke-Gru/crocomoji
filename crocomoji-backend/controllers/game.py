@@ -37,4 +37,4 @@ class GameController:
         return True
 
     def can_start(self) -> bool:
-        return len(self.game.players) >= 2 and self.game.status == "waiting"
+        return len(self.game.players) >= 3 and self.game.status in ("waiting", "finished")

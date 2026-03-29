@@ -2,7 +2,7 @@ from typing import Callable
 from pydantic import BaseModel
 
 
-class WSRouter:
+class ActionRouter:
     def __init__(self) -> None:
         self.handlers: dict[str, tuple[Callable, type[BaseModel] | None]] = {}
 

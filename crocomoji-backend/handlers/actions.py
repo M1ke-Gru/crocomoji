@@ -1,6 +1,6 @@
 import asyncio
 
-from handlers.router import WSRouter
+from handlers.router import ActionRouter
 from models.messages import StartGame, SubmitEnding, SubmitVote
 from models.round import Round
 from controllers.game import GameController
@@ -10,7 +10,7 @@ from services.broadcast import broadcast, send_to
 from services.jokes import fetch_jokes
 from state import room_timers
 
-router = WSRouter()
+router = ActionRouter()
 
 
 # ── Timer helpers ────────────────────────────────────────────────────────────
@@ -138,6 +138,8 @@ async def handle_start_game(room, player, data: StartGame):
     room.game.joke_time_seconds = data.joke_time_seconds
     room.game.voting_time_seconds = data.voting_time_seconds
     room.game.status = "playing"
+    for player in room.game.players.values():
+        player.stars = 0
 
     jokes = await fetch_jokes(data.num_rounds)
     room.game.rounds = [
