@@ -1,0 +1,33 @@
+services:
+  backend:
+    build: ./crocomoji-backend
+    restart: unless-stopped
+
+  frontend:
+    build: ./crocomoji-frontend
+    volumes:
+      - frontend_dist:/dist
+    restart: "no"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - frontend_dist:/srv/jokestar:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+
+volumes:
+  frontend_dist:
+  caddy_data:
+  caddy_config:

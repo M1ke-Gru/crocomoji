@@ -63,231 +63,298 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
 <template>
   <div class="min-h-screen bg-swamp flex flex-col">
 
-    <!-- Top bar -->
-    <header class="px-6 py-3 border-b border-moss flex items-center justify-between bg-murk">
-      <div class="flex items-center gap-3">
-        <span class="font-display text-tooth font-bold text-lg">⭐ Jokestar</span>
-        <span class="font-mono text-xs text-tooth-dim opacity-50">
-          Round {{ index + 1 }} / {{ totalRounds }}
-        </span>
+    <!-- Header -->
+    <header class="header px-5 py-3 flex items-center justify-between border-b border-moss">
+      <div class="flex items-center gap-4">
+        <span class="font-display font-bold text-tooth text-lg">⭐ Jokestar</span>
+        <span class="font-mono text-xs text-tooth-dim">Round {{ index + 1 }}/{{ totalRounds }}</span>
         <span
-          class="font-mono text-[0.65rem] px-2 py-0.5 rounded-full border"
+          class="font-mono text-xs px-2.5 py-0.5 rounded-full border font-medium"
           :class="{
-            'text-amber border-amber/30 bg-amber/10': phase === 'submitting',
-            'text-bright border-bright/30 bg-bright/10': phase === 'voting',
+            'text-amber border-amber/40 bg-amber/8': phase === 'submitting',
+            'text-bright border-bright/50 bg-bright/10 font-semibold': phase === 'voting',
             'text-tooth-dim border-moss': phase === 'reveal',
           }"
         >
-          {{ phase }}
+          {{ phase === 'submitting' ? 'Write' : phase === 'voting' ? 'Vote' : 'Results' }}
         </span>
       </div>
 
-      <!-- Mini scoreboard -->
-      <div class="flex gap-2">
+      <!-- Scoreboard -->
+      <div class="flex gap-1.5 flex-wrap justify-end">
         <div
           v-for="player in playerList"
           :key="player.id"
-          class="flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-mono"
-          :class="player.id === playerStore.playerId ? 'bg-amber/10 border border-amber/30 text-amber' : 'bg-swamp/50 border border-moss/30 text-tooth-dim'"
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-xs border"
+          :class="player.id === playerStore.playerId
+            ? 'bg-amber/8 border-amber/30 text-amber'
+            : 'bg-swamp border-moss text-tooth-dim'"
         >
-          <span>{{ player.display_name[0] }}</span>
+          <span class="font-medium">{{ player.display_name[0].toUpperCase() }}</span>
           <span>{{ player.stars % 1 === 0.5 ? player.stars : Math.floor(player.stars) }}⭐</span>
         </div>
       </div>
     </header>
 
     <!-- Timer bar -->
-    <div v-if="phase !== 'reveal'" class="relative h-1.5 w-full bg-moss/30">
+    <div v-if="phase !== 'reveal'" class="h-1.5 w-full bg-moss/30">
       <div
-        class="absolute left-0 top-0 h-full transition-all duration-1000 ease-linear"
-        :class="timerFraction > 0.4 ? 'bg-bright' : timerFraction > 0.2 ? 'bg-amber' : 'bg-red-400'"
+        class="h-full transition-all duration-1000 ease-linear"
+        :class="timerFraction > 0.4 ? 'bg-bright' : timerFraction > 0.2 ? 'bg-amber' : 'bg-red-500'"
         :style="{ width: `${timerFraction * 100}%` }"
       />
     </div>
 
     <!-- Timer countdown -->
-    <div v-if="phase !== 'reveal' && timeRemaining > 0" class="flex justify-center pt-4 pb-1">
+    <div v-if="phase !== 'reveal' && timeRemaining > 0" class="flex justify-center pt-5 pb-1">
       <div
-        class="font-mono text-5xl font-bold tabular-nums leading-none"
-        :class="timeRemaining > 10 ? 'text-tooth' : timeRemaining > 5 ? 'text-amber' : 'text-red-400'"
-      >
-        {{ timeRemaining }}
-      </div>
+        class="font-mono font-bold tabular-nums leading-none"
+        :class="{
+          'text-6xl text-tooth': timeRemaining > 10,
+          'text-6xl text-amber': timeRemaining > 5 && timeRemaining <= 10,
+          'text-7xl text-red-500 animate-pulse': timeRemaining <= 5,
+        }"
+      >{{ timeRemaining }}</div>
     </div>
 
     <!-- Main content -->
-    <main class="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-2xl mx-auto w-full">
+    <main class="flex-1 flex flex-col items-center px-4 py-8 max-w-2xl mx-auto w-full">
 
-      <!-- SUBMITTING phase -->
+      <!-- SUBMITTING -->
       <template v-if="phase === 'submitting'">
-        <div class="w-full text-center mb-8">
-          <div class="text-[0.65rem] uppercase tracking-[0.2em] text-tooth-dim font-mono opacity-60 mb-3">
-            Finish the joke
-          </div>
-          <div class="bg-murk border border-amber-dim/30 rounded-2xl px-8 py-6 mb-2">
-            <p class="font-display text-2xl text-tooth leading-relaxed">"{{ setup }}"</p>
-          </div>
-          <p class="text-tooth-dim opacity-40 font-mono text-xs">
-            {{ submittedCount }} / {{ totalPlayers }} submitted
-          </p>
+        <div class="setup-card w-full mb-6 px-7 py-6 text-center">
+          <p class="font-mono text-xs text-tooth-dim uppercase tracking-widest mb-4">Finish the joke</p>
+          <p class="font-display text-2xl sm:text-3xl text-tooth leading-relaxed">"{{ setup }}"</p>
+          <p class="font-mono text-xs text-tooth-dim mt-4">{{ submittedCount }}/{{ totalPlayers }} submitted</p>
         </div>
 
         <div v-if="!hasSubmitted" class="w-full flex flex-col gap-3">
           <textarea
             v-model="endingText"
             rows="3"
-            placeholder="Your punchline..."
-            class="w-full bg-murk border border-moss rounded-xl px-4 py-3 text-tooth font-mono text-sm outline-none focus:border-amber-dim resize-none transition-colors placeholder:text-tooth-dim placeholder:opacity-30"
+            placeholder="Your punchline…"
+            class="punchline-input w-full bg-murk border border-moss rounded-2xl px-5 py-4 text-tooth font-mono text-base outline-none resize-none transition-colors placeholder:text-tooth-dim/50"
             spellcheck="false"
             @keydown.ctrl.enter="submitEnding"
             @keydown.meta.enter="submitEnding"
           />
           <button
-            class="w-full py-3 bg-amber text-swamp font-mono text-sm font-medium rounded-xl hover:bg-amber-glow transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            class="btn-primary w-full py-4 font-mono text-base font-medium rounded-2xl cursor-pointer disabled:opacity-30"
             :disabled="!endingText.trim()"
             @click="submitEnding"
           >
             Submit punchline
           </button>
-          <p class="text-center text-tooth-dim opacity-30 font-mono text-xs">Ctrl+Enter to submit</p>
+          <p class="text-center font-mono text-xs text-tooth-dim">Ctrl+Enter to submit</p>
         </div>
 
-        <div v-else class="text-center">
+        <div v-else class="text-center py-8">
           <div class="text-4xl mb-3">✅</div>
-          <p class="text-tooth font-mono text-sm">Submitted! Waiting for others...</p>
-          <p class="text-tooth-dim opacity-40 font-mono text-xs mt-1">
-            {{ submittedCount }} / {{ totalPlayers }} ready
-          </p>
+          <p class="font-mono text-base text-tooth">Submitted!</p>
+          <p class="font-mono text-sm text-tooth-dim mt-1">Waiting for {{ totalPlayers - submittedCount }} more…</p>
         </div>
       </template>
 
-      <!-- VOTING phase -->
+      <!-- VOTING -->
       <template v-else-if="phase === 'voting'">
-        <div class="w-full">
-          <div class="text-center mb-6">
-            <div class="text-[0.65rem] uppercase tracking-[0.2em] text-bright font-mono opacity-70 mb-2">
-              Vote for the funniest ending to:
-            </div>
-            <p class="font-display text-xl text-tooth">"{{ setup }}"</p>
-            <p class="text-tooth-dim opacity-40 font-mono text-xs mt-2">
-              {{ votedCount }} votes cast
-              <span v-if="myVote"> · your vote is in</span>
-            </p>
-          </div>
+        <div class="w-full mb-6 text-center">
+          <p class="font-mono text-xs text-tooth-dim uppercase tracking-widest mb-3">Best ending to:</p>
+          <p class="font-display text-2xl sm:text-3xl text-tooth">"{{ setup }}"</p>
+          <p class="font-mono text-xs text-tooth-dim mt-3">
+            {{ votedCount }} vote{{ votedCount !== 1 ? 's' : '' }} cast
+            <span v-if="myVote"> · your vote is locked in</span>
+          </p>
+        </div>
 
-          <div class="flex flex-col gap-3">
-            <button
-              v-for="sub in submissionList"
-              :key="sub.player_id"
-              class="w-full text-left px-5 py-4 rounded-xl border transition-all duration-200 font-mono text-sm"
-              :class="{
-                'bg-amber/15 border-amber/40 text-tooth': myVote === sub.player_id,
-                'bg-murk border-moss text-tooth-dim hover:border-leaf hover:bg-moss/30 cursor-pointer': !myVote && canVoteFor(sub.player_id),
-                'bg-swamp/30 border-moss/30 text-tooth-dim opacity-40 cursor-not-allowed': !myVote && !canVoteFor(sub.player_id),
-                'bg-murk border-moss text-tooth-dim opacity-60 cursor-not-allowed': myVote && myVote !== sub.player_id,
-              }"
-              :disabled="!!myVote || !canVoteFor(sub.player_id)"
-              @click="castVote(sub.player_id)"
-            >
-              <span class="text-base leading-relaxed">{{ sub.text }}</span>
-              <span
-                v-if="!canVoteFor(sub.player_id)"
-                class="block text-[0.65rem] text-tooth-dim opacity-50 mt-1"
-              >
-                (your entry)
-              </span>
-              <span
-                v-if="myVote === sub.player_id"
-                class="block text-[0.65rem] text-amber mt-1"
-              >
-                ⭐ you voted for this
-              </span>
-            </button>
-          </div>
+        <div class="w-full flex flex-col gap-3">
+          <button
+            v-for="sub in submissionList"
+            :key="sub.player_id"
+            class="vote-card w-full text-left px-6 py-5 rounded-2xl border font-mono text-base leading-relaxed transition-all duration-150"
+            :class="{
+              'voted': myVote === sub.player_id,
+              'votable': !myVote && canVoteFor(sub.player_id),
+              'mine': !myVote && !canVoteFor(sub.player_id),
+              'spent': myVote && myVote !== sub.player_id,
+            }"
+            :disabled="!!myVote || !canVoteFor(sub.player_id)"
+            @click="castVote(sub.player_id)"
+          >
+            {{ sub.text }}
+            <span v-if="!canVoteFor(sub.player_id)" class="block font-mono text-[0.65rem] text-tooth-dim mt-2 uppercase tracking-wider">your entry</span>
+            <span v-if="myVote === sub.player_id" class="block font-mono text-[0.65rem] text-amber mt-2">⭐ your vote</span>
+          </button>
         </div>
       </template>
 
-      <!-- REVEAL phase -->
+      <!-- REVEAL -->
       <template v-else-if="phase === 'reveal'">
-        <div class="w-full">
-          <div class="text-center mb-6">
-            <div class="text-4xl mb-2">🎤</div>
-            <p class="font-display text-xl text-tooth">"{{ setup }}"</p>
-            <p v-if="actualPunchline" class="text-tooth-dim font-mono text-sm mt-2">
-              API punchline: "{{ actualPunchline }}"
-            </p>
-          </div>
+        <div class="w-full mb-6 text-center">
+          <div class="text-4xl mb-3">🎤</div>
+          <p class="font-display text-2xl sm:text-3xl text-tooth">"{{ setup }}"</p>
+          <p v-if="actualPunchline" class="font-mono text-sm text-tooth-dim mt-2 italic">API: "{{ actualPunchline }}"</p>
+        </div>
 
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="(result, i) in results"
-              :key="result.player_id"
-              class="flex items-start gap-4 px-5 py-4 rounded-xl border transition-all"
-              :class="i === 0 ? 'bg-amber/10 border-amber/30' : 'bg-murk border-moss'"
-            >
-              <div class="text-2xl font-mono font-bold min-w-[2rem] text-center" :class="i === 0 ? 'text-amber' : 'text-tooth-dim opacity-40'">
-                {{ i + 1 }}
+        <div class="w-full flex flex-col gap-3">
+          <div
+            v-for="(result, i) in results"
+            :key="result.player_id"
+            class="result-card flex items-start gap-5 px-6 py-5 rounded-2xl border"
+            :class="i === 0 ? 'winner' : 'loser'"
+          >
+            <div class="font-display text-3xl font-bold min-w-[2rem] text-center pt-0.5" :class="i === 0 ? 'text-amber' : 'text-tooth-dim'">
+              {{ i + 1 }}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-2 mb-2 flex-wrap">
+                <span class="font-mono text-base font-medium text-tooth">{{ result.display_name }}</span>
+                <span class="font-mono text-sm text-bright">+{{ result.stars_earned % 1 ? result.stars_earned : Math.floor(result.stars_earned) }} ⭐</span>
+                <span v-if="result.stars_earned > result.votes" class="font-mono text-[0.65rem] text-amber border border-amber/30 px-2 py-0.5 rounded-full uppercase tracking-wider">unanimous!</span>
               </div>
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="text-tooth font-mono text-sm font-medium">{{ result.display_name }}</span>
-                  <span class="text-xs font-mono text-bright">
-                    +{{ result.stars_earned % 1 ? result.stars_earned : Math.floor(result.stars_earned) }}⭐
-                  </span>
-                  <span v-if="result.stars_earned > result.votes" class="text-[0.6rem] font-mono text-amber bg-amber/10 px-1.5 py-0.5 rounded">
-                    unanimous bonus!
-                  </span>
-                </div>
-                <p class="text-tooth-dim font-mono text-sm">"{{ result.text }}"</p>
-                <p class="text-tooth-dim opacity-40 font-mono text-xs mt-1">
-                  {{ result.votes }} vote{{ result.votes !== 1 ? 's' : '' }}
-                </p>
-              </div>
+              <p class="font-mono text-base text-tooth-dim">"{{ result.text }}"</p>
+              <p class="font-mono text-xs text-tooth-dim mt-1.5">{{ result.votes }} vote{{ result.votes !== 1 ? 's' : '' }}</p>
             </div>
           </div>
-
-          <p class="text-center text-tooth-dim opacity-30 font-mono text-xs mt-6">
-            Next round starting soon...
-          </p>
         </div>
+
+        <p class="text-center font-mono text-xs text-tooth-dim mt-8">Next round starting soon…</p>
       </template>
 
     </main>
 
     <!-- Game over overlay -->
-    <div
-      v-if="status === 'finished'"
-      class="fixed inset-0 bg-swamp/95 flex flex-col items-center justify-center px-4 z-50"
-    >
-      <div class="text-5xl mb-4">🏆</div>
-      <p class="font-display text-3xl text-tooth mb-8">Game over!</p>
-      <div class="bg-murk border border-moss rounded-xl p-6 w-full max-w-sm mb-8">
-        <h3 class="font-mono text-xs uppercase tracking-[0.2em] text-tooth-dim opacity-60 mb-4 text-center">
-          Final stars
-        </h3>
+    <div v-if="status === 'finished'" class="fixed inset-0 flex flex-col items-center justify-center px-4 z-50 game-over-bg">
+      <div class="text-6xl mb-4">🏆</div>
+      <p class="font-display text-4xl text-tooth mb-1">Game over!</p>
+      <p class="font-mono text-sm text-tooth-dim mb-10 uppercase tracking-widest">Final standings</p>
+
+      <div class="card w-full max-w-xs p-5 mb-8">
         <div class="flex flex-col gap-2">
           <div
             v-for="(player, i) in playerList.slice().sort((a, b) => b.stars - a.stars)"
             :key="player.id"
-            class="flex items-center justify-between px-3 py-2 rounded-lg"
-            :class="i === 0 ? 'bg-amber/10 border border-amber/20' : 'bg-swamp/50'"
+            class="flex items-center justify-between px-4 py-3 rounded-xl"
+            :class="i === 0 ? 'bg-amber/8 border border-amber/25' : 'bg-swamp border border-moss'"
           >
-            <div class="flex items-center gap-2">
-              <span class="text-tooth-dim font-mono text-xs opacity-50">{{ i + 1 }}</span>
-              <span class="text-tooth font-mono text-sm">{{ player.display_name }}</span>
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm font-bold" :class="i === 0 ? 'text-amber' : 'text-tooth-dim'">{{ i + 1 }}</span>
+              <span class="font-mono text-base" :class="i === 0 ? 'text-tooth font-medium' : 'text-tooth-dim'">{{ player.display_name }}</span>
             </div>
-            <span class="text-amber font-mono text-sm font-medium">
+            <span class="font-mono text-base font-bold" :class="i === 0 ? 'text-amber' : 'text-tooth-dim'">
               {{ player.stars % 1 ? player.stars : Math.floor(player.stars) }} ⭐
             </span>
           </div>
         </div>
       </div>
-      <button
-        class="px-8 py-3 bg-amber text-swamp font-mono text-sm font-medium rounded-xl hover:bg-amber-glow transition-colors cursor-pointer"
-        @click="$router.push(`/room/${roomName}`)"
-      >
+
+      <button class="btn-green px-10 py-4 font-mono text-base font-medium rounded-2xl cursor-pointer" @click="$router.push(`/room/${roomName}`)">
         Play again
       </button>
     </div>
+
   </div>
 </template>
+
+<style scoped>
+.header {
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.setup-card {
+  background: var(--color-murk);
+  border: 1px solid var(--color-moss);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 16px rgba(17,17,16,0.07);
+}
+
+.punchline-input:focus {
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 3px rgba(196,98,0,0.1);
+}
+
+.btn-primary {
+  background: var(--color-amber);
+  color: #fff;
+  transition: all 0.15s ease;
+}
+.btn-primary:not(:disabled):hover {
+  background: var(--color-amber-glow);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196,98,0,0.3);
+}
+.btn-primary:not(:disabled):active { transform: translateY(0); }
+
+/* Voting cards */
+.vote-card.votable {
+  background: var(--color-murk);
+  border-color: var(--color-moss);
+  color: var(--color-tooth);
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(17,17,16,0.05);
+}
+.vote-card.votable:hover {
+  border-color: var(--color-bright);
+  background: var(--color-swamp);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(10,122,56,0.12);
+}
+.vote-card.voted {
+  background: rgba(196,98,0,0.06);
+  border-color: rgba(196,98,0,0.35);
+  color: var(--color-tooth);
+  cursor: default;
+}
+.vote-card.mine {
+  background: var(--color-murk);
+  border-color: var(--color-moss);
+  color: var(--color-tooth-dim);
+  opacity: 0.55;
+  cursor: default;
+}
+.vote-card.spent {
+  background: var(--color-murk);
+  border-color: var(--color-moss);
+  color: var(--color-tooth-dim);
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Result cards */
+.result-card.winner {
+  background: rgba(196,98,0,0.05);
+  border-color: rgba(196,98,0,0.25);
+  box-shadow: 0 2px 12px rgba(196,98,0,0.08);
+}
+.result-card.loser {
+  background: var(--color-murk);
+  border-color: var(--color-moss);
+  box-shadow: 0 1px 6px rgba(17,17,16,0.04);
+}
+
+.card {
+  background: var(--color-murk);
+  border: 1px solid var(--color-moss);
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 8px rgba(17,17,16,0.06);
+}
+
+.game-over-bg {
+  background: rgba(240,239,232,0.96);
+  backdrop-filter: blur(6px);
+}
+
+.btn-green {
+  background: var(--color-bright);
+  color: #fff;
+  transition: all 0.15s ease;
+}
+.btn-green:hover {
+  background: var(--color-bright-glow);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(10,122,56,0.3);
+}
+</style>

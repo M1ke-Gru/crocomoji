@@ -2,20 +2,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap');
 
 @theme {
-  --color-swamp: #0a1a0f;
-  --color-murk: #0f2417;
-  --color-moss: #1a3a24;
-  --color-leaf: #2d5a3a;
-  --color-bright: #4a8c5c;
-  --color-amber: #d4a04a;
-  --color-amber-glow: #e8b85a;
-  --color-amber-dim: #8a6a2a;
-  --color-scale: #3a6648;
-  --color-tooth: #f0ead6;
-  --color-tooth-dim: #c8c2ae;
-  --color-water: #1a2e28;
-  --color-water-surface: #243a32;
-  --color-mud: #2a1f14;
+  --color-swamp: #f0efe8;
+  --color-murk: #ffffff;
+  --color-moss: #c8c4bc;
+  --color-leaf: #a09890;
+  --color-bright: #0a7a38;
+  --color-bright-glow: #0e9444;
+  --color-amber: #b85400;
+  --color-amber-glow: #d46400;
+  --color-amber-dim: #904200;
+  --color-scale: #2a7a5a;
+  --color-tooth: #111110;
+  --color-tooth-dim: #525048;
+  --color-water: #e8e6de;
+  --color-water-surface: #e0ddd4;
+  --color-mud: #d0ccc4;
 
   --font-display: 'Playfair Display', Georgia, serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
@@ -23,13 +24,13 @@
 
 /* emoji-picker-element theme */
 emoji-picker {
-  --background: #0f2417;
-  --border-color: #1a3a24;
-  --indicator-color: #d4a04a;
-  --input-border-color: #1a3a24;
-  --input-font-color: #f0ead6;
-  --input-placeholder-color: #c8c2ae;
-  --button-hover-background: #1a3a24;
+  --background: #ffffff;
+  --border-color: #c8c4bc;
+  --indicator-color: #c46200;
+  --input-border-color: #c8c4bc;
+  --input-font-color: #111110;
+  --input-placeholder-color: #525048;
+  --button-hover-background: #f0efe8;
   --emoji-padding: 0.3rem;
   --category-emoji-padding: 0.3rem;
   --num-columns: 8;

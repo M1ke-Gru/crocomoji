@@ -1,0 +1,20 @@
+mgrushko.dev {
+    # Backend API — strip /jokestar/api prefix before proxying.
+    # flush_interval -1 is required for SSE (disables response buffering).
+    handle_path /jokestar/api/* {
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
+
+    # Frontend SPA — strip /jokestar prefix, fall back to index.html for
+    # client-side routes.
+    handle_path /jokestar/* {
+        root * /srv/jokestar
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Redirect bare /jokestar to /jokestar/
+    redir /jokestar /jokestar/ 301
+}
