@@ -90,7 +90,7 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
             ? 'bg-amber/8 border-amber/30 text-amber'
             : 'bg-swamp border-moss text-tooth-dim'"
         >
-          <span class="font-medium">{{ player.display_name[0].toUpperCase() }}</span>
+          <span class="font-medium">{{ player.display_name[0]?.toUpperCase() }}</span>
           <span>{{ player.stars % 1 === 0.5 ? player.stars : Math.floor(player.stars) }}⭐</span>
         </div>
       </div>
