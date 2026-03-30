@@ -20,7 +20,7 @@ export const api = {
     }),
 
   listRooms: () =>
-    request<{ name: string; player_count: number; status: string }[]>('/rooms'),
+    request<{ name: string; player_count: number; status: string; locked: boolean }[]>('/rooms'),
 
   getRoom: (name: string) =>
     request<{ name: string; players: { id: string; display_name: string; stars: number }[]; status: string }>(
