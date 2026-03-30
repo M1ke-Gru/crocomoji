@@ -6,6 +6,7 @@ export interface RoomSummary {
   name: string
   player_count: number
   status: string
+  locked: boolean
 }
 
 export const useRoomStore = defineStore('room', () => {

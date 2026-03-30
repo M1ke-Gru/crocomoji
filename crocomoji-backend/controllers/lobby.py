@@ -16,6 +16,8 @@ class LobbyController:
         room = self.rooms.get(room_name)
         if not room:
             raise KeyError(f"Room '{room_name}' not found")
+        if room.locked:
+            raise PermissionError(f"Room '{room_name}' is locked")
         player = Player(
             id=uuid4().hex[:8],
             display_name=display_name,
@@ -41,6 +43,7 @@ class LobbyController:
                 "name": room.name,
                 "player_count": len(room.game.players),
                 "status": room.game.status,
+                "locked": room.locked,
             }
             for room in self.rooms.values()
         ]

@@ -11,22 +11,32 @@ const roomStore = useRoomStore()
 
 const newRoomName = ref('')
 const joinDisplayName = ref('')
-const joiningRoom = ref('')
 const createError = ref('')
 const joinError = ref('')
+const duplicateRoomName = ref('')
 
 onMounted(() => roomStore.fetchRooms())
 
 async function createRoom() {
   if (!newRoomName.value.trim()) return
+  if (!joinDisplayName.value.trim()) {
+    joinError.value = 'Enter your name first'
+    return
+  }
   createError.value = ''
+  duplicateRoomName.value = ''
   try {
-    await api.createRoom(newRoomName.value.trim())
-    joiningRoom.value = newRoomName.value.trim()
+    const name = newRoomName.value.trim()
+    await api.createRoom(name)
     newRoomName.value = ''
-    await roomStore.fetchRooms()
+    await join(name)
   } catch (e) {
-    createError.value = String(e)
+    const msg = String(e)
+    if (msg.toLowerCase().includes('already exists')) {
+      duplicateRoomName.value = newRoomName.value.trim()
+    } else {
+      createError.value = msg
+    }
   }
 }
 
@@ -84,7 +94,7 @@ async function join(roomName: string) {
           />
           <button
             class="btn-primary px-5 py-3 font-mono text-sm font-medium rounded-xl disabled:opacity-30 cursor-pointer"
-            :disabled="!newRoomName.trim() || !joinDisplayName.trim()"
+            :disabled="!newRoomName.trim()"
             @click="createRoom"
           >
             Create
@@ -94,28 +104,28 @@ async function join(roomName: string) {
       </div>
 
       <!-- Room list -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
           <h2 class="font-mono text-sm text-tooth-dim">Open rooms</h2>
-          <button class="font-mono text-xs text-tooth-dim hover:text-tooth transition-colors cursor-pointer" @click="roomStore.fetchRooms()">
-            ↻ refresh
+          <button class="btn-refresh font-mono text-sm cursor-pointer" @click="roomStore.fetchRooms()">
+            ↻ Refresh
           </button>
         </div>
 
-        <div v-if="roomStore.loading" class="text-center font-mono text-sm text-tooth-dim py-8">
+        <div v-if="roomStore.loading" class="text-center font-mono text-sm text-tooth-dim py-6">
           Loading…
         </div>
 
-        <div v-else-if="roomStore.rooms.length === 0" class="text-center py-10">
+        <div v-else-if="roomStore.rooms.length === 0" class="text-center py-6">
           <div class="text-3xl mb-2">🎤</div>
-          <p class="font-mono text-sm text-tooth-dim">No rooms yet — create one above!</p>
+          <p class="font-mono text-sm text-tooth-dim">Be the first — create a room and invite your friends!</p>
         </div>
 
         <div v-else class="flex flex-col gap-2">
           <div
             v-for="room in roomStore.rooms"
             :key="room.name"
-            class="card flex items-center justify-between px-4 py-3.5"
+            class="flex items-center justify-between px-4 py-3 rounded-xl bg-swamp border border-moss"
             :class="room.status !== 'waiting' ? 'opacity-60' : ''"
           >
             <div>
@@ -125,13 +135,14 @@ async function join(roomName: string) {
               </span>
             </div>
             <button
-              v-if="room.status === 'waiting'"
+              v-if="room.status === 'waiting' && !room.locked"
               class="btn-join px-4 py-1.5 font-mono text-xs font-medium rounded-lg disabled:opacity-30 cursor-pointer"
               :disabled="!joinDisplayName.trim()"
               @click="join(room.name)"
             >
               Join →
             </button>
+            <span v-else-if="room.locked" class="font-mono text-xs text-amber">🔒 locked</span>
             <span v-else class="font-mono text-xs text-tooth-dim italic">in game</span>
           </div>
         </div>
@@ -139,6 +150,23 @@ async function join(roomName: string) {
 
     </div>
   </div>
+
+  <!-- Duplicate room popup -->
+  <Transition name="popup">
+    <div v-if="duplicateRoomName" class="fixed inset-0 flex items-center justify-center px-4 z-50" @click.self="duplicateRoomName = ''">
+      <div class="popup-backdrop absolute inset-0"></div>
+      <div class="popup relative w-full max-w-sm p-6 text-center">
+        <div class="text-4xl mb-3">🚫</div>
+        <h3 class="font-display text-xl font-bold text-tooth mb-2">Room already exists</h3>
+        <p class="font-mono text-sm text-tooth-dim mb-6">
+          A room named <span class="text-tooth font-medium">"{{ duplicateRoomName }}"</span> already exists. Pick a different name.
+        </p>
+        <button class="btn-primary w-full py-3 font-mono text-sm font-medium rounded-xl cursor-pointer" @click="duplicateRoomName = ''">
+          Got it
+        </button>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -185,5 +213,46 @@ async function join(roomName: string) {
   background: var(--color-bright-glow);
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(10,122,56,0.3);
+}
+
+.btn-refresh {
+  background: var(--color-swamp);
+  color: var(--color-tooth-dim);
+  border: 1.5px solid var(--color-moss);
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.625rem;
+  transition: all 0.15s ease;
+}
+.btn-refresh:hover {
+  border-color: var(--color-leaf);
+  color: var(--color-tooth);
+  background: var(--color-swamp);
+}
+
+/* Popup */
+.popup-backdrop {
+  background: rgba(17,17,16,0.4);
+  backdrop-filter: blur(3px);
+}
+
+.popup {
+  background: var(--color-murk);
+  border: 1.5px solid var(--color-moss);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 40px rgba(17,17,16,0.18);
+}
+
+.popup-enter-active, .popup-leave-active {
+  transition: opacity 0.2s ease;
+}
+.popup-enter-active .popup, .popup-leave-active .popup {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.popup-enter-from, .popup-leave-to {
+  opacity: 0;
+}
+.popup-enter-from .popup, .popup-leave-to .popup {
+  transform: scale(0.95) translateY(8px);
+  opacity: 0;
 }
 </style>

@@ -1,7 +1,7 @@
 import asyncio
 
 from handlers.router import ActionRouter
-from models.messages import StartGame, SubmitEnding, SubmitVote
+from models.messages import StartGame, SubmitEnding, SubmitVote, ToggleLock, VoteStart
 from models.round import Round
 from controllers.game import GameController
 from controllers.round import RoundController
@@ -155,6 +155,31 @@ async def handle_start_game(room, player, data: StartGame):
     })
 
     await _start_round(room)
+
+
+@router.action(ToggleLock)
+async def handle_toggle_lock(room, player, data: ToggleLock):
+    if room.game.status != "waiting":
+        return
+    room.locked = not room.locked
+    await broadcast(room, "room_lock_changed", {"locked": room.locked})
+
+
+@router.action(VoteStart)
+async def handle_vote_start(room, player, data: VoteStart):
+    if room.game.status != "waiting":
+        return
+    room.start_votes.add(player.id)
+    votes = len(room.start_votes)
+    total = len(room.game.players)
+    await broadcast(room, "start_vote_added", {
+        "player_id": player.id,
+        "votes": votes,
+        "total": total,
+    })
+    if votes > total / 2:
+        room.start_votes.clear()
+        await handle_start_game(room, player, StartGame())
 
 
 @router.action(SubmitEnding)

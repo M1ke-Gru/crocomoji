@@ -27,3 +27,11 @@ class SubmitEnding(BaseModel):
 
 class SubmitVote(BaseModel):
     player_id: str
+
+
+class ToggleLock(BaseModel):
+    pass
+
+
+class VoteStart(BaseModel):
+    pass

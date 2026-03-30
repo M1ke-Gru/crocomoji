@@ -117,15 +117,29 @@ export function disconnect() {
   connected.value = false
 }
 
+function handleUnload() {
+  const player = usePlayerStore()
+  if (!player.playerId || !player.roomName) return
+  // Abort the SSE stream immediately so the server's finally-block fires at once.
+  disconnect()
+  // sendBeacon is the only reliable way to fire a request on tab close.
+  navigator.sendBeacon(
+    `${BASE_URL}/rooms/${player.roomName}/leave/${player.playerId}`,
+  )
+}
+
+window.addEventListener('beforeunload', handleUnload)
+
 function dispatch(action: string, data: Record<string, unknown>) {
   const game = useGameStore()
   const round = useRoundStore()
 
   switch (action) {
     case 'room_sync': {
-      const sync = data as { players: { id: string; display_name: string; stars: number }[]; status: string }
+      const sync = data as { players: { id: string; display_name: string; stars: number }[]; status: string; locked?: boolean; start_votes?: number }
       game.setPlayersFromRoom(sync.players)
       game.setStatus(sync.status as 'waiting' | 'playing' | 'finished')
+      game.setLobbyState({ locked: sync.locked, start_votes: sync.start_votes })
       break
     }
     case 'player_connected':
@@ -165,6 +179,12 @@ function dispatch(action: string, data: Record<string, unknown>) {
       break
     case 'game_over':
       game.onGameOver((data as { scores: Record<string, number> }).scores)
+      break
+    case 'room_lock_changed':
+      game.onLockChanged(data as { locked: boolean })
+      break
+    case 'start_vote_added':
+      game.onStartVoteAdded(data as { votes: number; total: number })
       break
     case 'error':
       console.warn('Server error:', (data as { message: string }).message)

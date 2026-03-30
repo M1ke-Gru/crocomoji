@@ -62,6 +62,8 @@ async def join_room(name: str, req: JoinRequest):
         player = ctrl.join_room(name, req.display_name)
     except KeyError as e:
         raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
     return {"player_id": player.id, "room_name": name}
 
 
@@ -89,6 +91,8 @@ async def sse_stream(request: Request, name: str, player_id: str):
                 for p in room.game.players.values()
             ],
             "status": room.game.status,
+            "locked": room.locked,
+            "start_votes": len(room.start_votes),
         },
     })
 
@@ -130,6 +134,23 @@ async def sse_stream(request: Request, name: str, player_id: str):
             "Connection": "keep-alive",
         },
     )
+
+
+@app.post("/rooms/{name}/leave/{player_id}")
+async def leave_room(name: str, player_id: str):
+    ctrl = LobbyController(rooms)
+    room = ctrl.get_room(name)
+    if not room:
+        return {"ok": True}  # already gone, nothing to do
+
+    display_name = room.game.players.get(player_id, None)
+    display_name = display_name.display_name if display_name else player_id
+
+    room.queues.pop(player_id, None)
+    if room.game.status == "waiting":
+        ctrl.leave_room(player_id, name)
+    await broadcast(room, "player_disconnected", {"player_id": player_id, "display_name": display_name})
+    return {"ok": True}
 
 
 @app.post("/rooms/{name}/actions/{player_id}")

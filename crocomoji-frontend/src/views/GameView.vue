@@ -180,9 +180,12 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
             :disabled="!!myVote || !canVoteFor(sub.player_id)"
             @click="castVote(sub.player_id)"
           >
-            {{ sub.text }}
+            <span class="flex items-start justify-between gap-3">
+              <span>{{ sub.text }}</span>
+              <span v-if="myVote === sub.player_id" class="shrink-0 text-xl leading-none">✅</span>
+            </span>
             <span v-if="!canVoteFor(sub.player_id)" class="block font-mono text-[0.65rem] text-tooth-dim mt-2 uppercase tracking-wider">your entry</span>
-            <span v-if="myVote === sub.player_id" class="block font-mono text-[0.65rem] text-amber mt-2">⭐ your vote</span>
+            <span v-if="myVote === sub.player_id" class="block font-mono text-xs font-medium mt-2">Your vote — locked in!</span>
           </button>
         </div>
       </template>
@@ -192,7 +195,10 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
         <div class="w-full mb-6 text-center">
           <div class="text-4xl mb-3">🎤</div>
           <p class="font-display text-2xl sm:text-3xl text-tooth">"{{ setup }}"</p>
-          <p v-if="actualPunchline" class="font-mono text-sm text-tooth-dim mt-2 italic">API: "{{ actualPunchline }}"</p>
+          <div v-if="actualPunchline" class="mt-4">
+            <p class="font-mono text-xs text-tooth-dim uppercase tracking-widest mb-1">A comedian would say…</p>
+            <p class="font-display text-xl sm:text-2xl text-tooth-dim italic">"{{ actualPunchline }}"</p>
+          </div>
         </div>
 
         <div class="w-full flex flex-col gap-3">
@@ -303,10 +309,11 @@ const canVoteFor = (playerId: string) => playerId !== playerStore.playerId
   box-shadow: 0 6px 18px rgba(10,122,56,0.12);
 }
 .vote-card.voted {
-  background: rgba(196,98,0,0.06);
-  border-color: rgba(196,98,0,0.35);
-  color: var(--color-tooth);
+  background: var(--color-bright);
+  border-color: var(--color-bright);
+  color: #fff;
   cursor: default;
+  box-shadow: 0 4px 16px rgba(10,122,56,0.25);
 }
 .vote-card.mine {
   background: var(--color-murk);

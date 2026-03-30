@@ -10,3 +10,5 @@ class Room(BaseModel):
     name: str
     game: Game = Field(default_factory=Game)
     queues: dict[str, Any] = Field(default_factory=dict)
+    locked: bool = False
+    start_votes: set[str] = Field(default_factory=set)

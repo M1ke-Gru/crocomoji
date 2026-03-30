@@ -2,6 +2,8 @@ import httpx
 
 JOKEAPI_URL = "https://v2.jokeapi.dev/joke/Any"
 
+JOKEAPI_FLAGS = "nsfw,religious,political,racist,sexist,explicit"
+
 FALLBACK_JOKES = [
     {"setup": "Why don't scientists trust atoms?", "delivery": "Because they make up everything."},
     {"setup": "Why did the scarecrow win an award?", "delivery": "Because he was outstanding in his field."},
@@ -25,7 +27,12 @@ async def fetch_jokes(k: int) -> list[dict[str, str]]:
             # jokeapi allows up to 10 per request
             while len(jokes) < k:
                 amount = min(10, k - len(jokes))
-                params = {"type": "twopart", "safe-mode": "", "amount": amount}
+                params = {
+                    "type": "twopart",
+                    "amount": amount,
+                    "blacklistFlags": JOKEAPI_FLAGS,
+                    "safe-mode": "",
+                }
                 resp = await client.get(JOKEAPI_URL, params=params)
                 resp.raise_for_status()
                 data = resp.json()

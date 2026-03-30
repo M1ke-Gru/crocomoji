@@ -12,6 +12,8 @@ export const useGameStore = defineStore('game', () => {
   const status = ref<'waiting' | 'playing' | 'finished'>('waiting')
   const players = ref<Record<string, GamePlayer>>({})
   const numRounds = ref(0)
+  const locked = ref(false)
+  const startVotes = ref(0)
 
   const playerStore = usePlayerStore()
   const playerList = computed(() => Object.values(players.value))
@@ -51,17 +53,35 @@ export const useGameStore = defineStore('game', () => {
     )
   }
 
+  function onLockChanged(data: { locked: boolean }) {
+    locked.value = data.locked
+  }
+
+  function onStartVoteAdded(data: { votes: number; total: number }) {
+    startVotes.value = data.votes
+  }
+
+  function setLobbyState(data: { locked?: boolean; start_votes?: number }) {
+    if (data.locked !== undefined) locked.value = data.locked
+    if (data.start_votes !== undefined) startVotes.value = data.start_votes
+  }
+
   return {
     status,
     players,
     numRounds,
     playerList,
+    locked,
+    startVotes,
     onPlayerConnected,
     onPlayerDisconnected,
     onGameStarted,
     onStarsUpdated,
     onGameOver,
+    onLockChanged,
+    onStartVoteAdded,
     setStatus,
     setPlayersFromRoom,
+    setLobbyState,
   }
 })
